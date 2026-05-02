@@ -1,0 +1,233 @@
+/* ═══════════════════════════════════════════════════════════════
+   HisabX — Animations (Dark Theme)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Page Transitions ─── */
+.page-enter { animation: pageSlideIn var(--duration-page) var(--ease-out) forwards; }
+.page-exit { animation: pageSlideOut var(--duration-page) var(--ease-out) forwards; }
+
+@keyframes pageSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pageSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-20px); }
+}
+
+.page-enter-back { animation: pageSlideInBack var(--duration-page) var(--ease-out) forwards; }
+@keyframes pageSlideInBack {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Fade ─── */
+.fade-in { animation: fadeIn var(--duration-normal) var(--ease-out) forwards; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.fade-up { animation: fadeUp var(--duration-slow) var(--ease-out) forwards; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Stagger Children ─── */
+.stagger > * { opacity: 0; animation: fadeUp var(--duration-slow) var(--ease-out) forwards; }
+.stagger > *:nth-child(1) { animation-delay: 40ms; }
+.stagger > *:nth-child(2) { animation-delay: 80ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 160ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 240ms; }
+.stagger > *:nth-child(7) { animation-delay: 280ms; }
+.stagger > *:nth-child(8) { animation-delay: 320ms; }
+
+/* ─── Scale Pop ─── */
+.scale-pop { animation: scalePop var(--duration-normal) var(--ease-spring) forwards; }
+@keyframes scalePop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Ripple Effect ─── */
+.ripple { position: relative; overflow: hidden; }
+.ripple::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  width: 100px; height: 100px;
+  margin-top: -50px; margin-left: -50px;
+  top: 50%; left: 50%;
+  transform: scale(0); opacity: 1;
+  transition: none;
+}
+.ripple:active::after { transform: scale(4); opacity: 0; transition: transform 0.5s, opacity 0.5s; }
+
+/* ─── Slide Up ─── */
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(100%); }
+  to { transform: translateX(-50%) translateY(0); }
+}
+
+/* ─── Pulse ─── */
+.pulse { animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ─── Skeleton Loading ─── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Toast ─── */
+.toast-enter { animation: toastIn var(--duration-slow) var(--ease-spring) forwards; }
+.toast-exit { animation: toastOut var(--duration-normal) var(--ease-out) forwards; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+/* ─── Glow Pulse ─── */
+.glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+@keyframes glowPulse {
+  0%, 100% { box-shadow: var(--shadow-accent); }
+  50% { box-shadow: var(--shadow-accent-lg); }
+}
+
+/* ─── Spinner ─── */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Login Screen ─── */
+.login-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-glow {
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+  animation: loginGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes loginGlow {
+  from { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  to { opacity: 1; transform: translateX(-50%) scale(1.2); }
+}
+
+.login-content {
+  width: 100%;
+  max-width: 380px;
+  animation: fadeUp var(--duration-slow) var(--ease-out) forwards;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo-icon-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-xl);
+  background: var(--gradient-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-accent-lg);
+}
+
+.login-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.login-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: 24px;
+  backdrop-filter: blur(20px);
+}
+
+.login-tabs {
+  display: flex;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+
+.login-tab {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  transition: all var(--duration-fast);
+  text-align: center;
+}
+
+.login-tab.active {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-btn {
+  margin-top: 8px;
+}
+
+.login-footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-disabled);
+  margin-top: 24px;
+}
+

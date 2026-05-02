@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════════════════════════
+   HisabX — Design Tokens (Dark Crypto Theme)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── Core Background ─── */
+  --bg-primary: #08080d;
+  --bg-secondary: #0e0e15;
+  --bg-card: #13131c;
+  --bg-card-hover: #1a1a26;
+  --bg-elevated: #181824;
+  --bg-input: #111119;
+  --bg-surface: #0b0b12;
+
+  /* ─── Accent ─── */
+  --accent: #6c5ce7;
+  --accent-dim: #5a4bd6;
+  --accent-glow: rgba(108, 92, 231, 0.15);
+  --accent-glow-strong: rgba(108, 92, 231, 0.25);
+  --accent-subtle: rgba(108, 92, 231, 0.08);
+
+  /* ─── Semantic Colors ─── */
+  --green: #00d68f;
+  --green-dim: #00b377;
+  --green-subtle: rgba(0, 214, 143, 0.1);
+  --green-glow: rgba(0, 214, 143, 0.2);
+
+  --red: #ff6b6b;
+  --red-dim: #e55a5a;
+  --red-subtle: rgba(255, 107, 107, 0.1);
+  --red-glow: rgba(255, 107, 107, 0.2);
+
+  --amber: #ffd93d;
+  --amber-subtle: rgba(255, 217, 61, 0.1);
+
+  --blue: #4ea8de;
+  --blue-subtle: rgba(78, 168, 222, 0.1);
+
+  /* ─── Text ─── */
+  --text-primary: #e8e8ef;
+  --text-secondary: #8b8b9e;
+  --text-tertiary: #5a5a6e;
+  --text-disabled: #3d3d4e;
+  --text-inverse: #08080d;
+
+  /* ─── Borders ─── */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --border-accent: rgba(108, 92, 231, 0.2);
+  --border-focus: rgba(108, 92, 231, 0.4);
+
+  /* ─── Gradients ─── */
+  --gradient-accent: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
+  --gradient-hero: linear-gradient(145deg, #1a1a2e 0%, #13131c 100%);
+  --gradient-card: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+  --gradient-green: linear-gradient(135deg, #00d68f 0%, #00b377 100%);
+  --gradient-red: linear-gradient(135deg, #ff6b6b 0%, #e55a5a 100%);
+  --gradient-glass: linear-gradient(145deg, rgba(19,19,28,0.95) 0%, rgba(14,14,21,0.9) 100%);
+  --gradient-bottom-fade: linear-gradient(to top, var(--bg-primary) 60%, transparent);
+
+  /* ─── Typography ─── */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  --fs-display: 36px;
+  --lh-display: 42px;
+  --fw-display: 700;
+  --ls-display: -0.03em;
+
+  --fs-headline-lg: 24px;
+  --lh-headline-lg: 30px;
+  --fw-headline-lg: 700;
+  --ls-headline-lg: -0.02em;
+
+  --fs-headline-md: 20px;
+  --lh-headline-md: 26px;
+  --fw-headline-md: 600;
+
+  --fs-body-lg: 16px;
+  --lh-body-lg: 24px;
+  --fw-body-lg: 400;
+
+  --fs-body-md: 14px;
+  --lh-body-md: 22px;
+  --fw-body-md: 400;
+
+  --fs-body-sm: 13px;
+  --lh-body-sm: 18px;
+  --fw-body-sm: 400;
+
+  --fs-label: 11px;
+  --lh-label: 14px;
+  --fw-label: 600;
+  --ls-label: 0.06em;
+
+  --fs-label-sm: 10px;
+  --lh-label-sm: 12px;
+  --fw-label-sm: 600;
+
+  /* ─── Spacing ─── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --gutter: 12px;
+  --stack-gap: 16px;
+  --container-padding: 20px;
+  --section-gap: 28px;
+
+  /* ─── Border Radius ─── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* ─── Shadows ─── */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-accent: 0 4px 20px rgba(108, 92, 231, 0.2);
+  --shadow-accent-lg: 0 8px 32px rgba(108, 92, 231, 0.3);
+  --shadow-green: 0 4px 16px rgba(0, 214, 143, 0.2);
+  --shadow-red: 0 4px 16px rgba(255, 107, 107, 0.2);
+
+  /* ─── Z-Index ─── */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-max: 999;
+
+  /* ─── Transitions ─── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 350ms;
+  --duration-page: 300ms;
+}

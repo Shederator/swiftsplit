@@ -1,0 +1,24 @@
+{
+  "name": "HisabX",
+  "short_name": "HisabX",
+  "description": "Split expenses with friends easily",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

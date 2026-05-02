@@ -1,0 +1,11 @@
+{
+  "appId": "com.hisabx.app",
+  "appName": "HisabX",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
