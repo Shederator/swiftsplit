@@ -72,7 +72,7 @@ export default function App() {
   // Loading state
   if (authState === 'loading') {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-body)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: 'var(--bg-body)' }}>
         <div style={{ textAlign: 'center' }}>
           <div className="logo-icon" style={{ width: 48, height: 48, borderRadius: 14, margin: '0 auto 16px' }}>
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", color: 'white', fontSize: 24 }}>payments</span>
@@ -95,7 +95,7 @@ export default function App() {
 
       {authState === 'ready' && (
         <HashRouter>
-          <div id="page-container" style={{ minHeight: '100vh' }}>
+          <div id="page-container" style={{ minHeight: '100dvh' }}>
             <Routes>
               <Route path="/" element={<HomeScreen />} />
               <Route path="/activity" element={<ActivityScreen />} />
