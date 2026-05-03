@@ -14,7 +14,11 @@ export function ToastProvider({ children }) {
 
   const showToast = useCallback((message, type = 'success', duration = 3000) => {
     const id = ++idRef.current;
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts(prev => {
+      const updated = [...prev, { id, message, type }];
+      if (updated.length > 3) return updated.slice(updated.length - 3);
+      return updated;
+    });
     setTimeout(() => {
       setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t));
       setTimeout(() => {
@@ -49,9 +53,9 @@ export function showToastGlobal(message, type = 'success', duration = 3000) {
 /* ── Toast UI ──────────────────────────────────────────────── */
 
 const colors = {
-  success: { bg: 'rgba(0, 214, 143, 0.12)', border: 'rgba(0, 214, 143, 0.2)', color: '#00d68f' },
-  error:   { bg: 'rgba(255, 107, 107, 0.12)', border: 'rgba(255, 107, 107, 0.2)', color: '#ff6b6b' },
-  info:    { bg: 'rgba(108, 92, 231, 0.12)', border: 'rgba(108, 92, 231, 0.2)', color: '#6c5ce7' }
+  success: '#00d68f',
+  error:   '#ff6b6b',
+  info:    '#6c5ce7'
 };
 
 const icons = { success: 'check_circle', error: 'error', info: 'info' };
@@ -59,23 +63,25 @@ const icons = { success: 'check_circle', error: 'error', info: 'info' };
 function ToastContainer({ toasts }) {
   return (
     <div style={{
-      position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 500, display: 'flex', flexDirection: 'column', gap: 8,
-      maxWidth: 420, width: '90%', pointerEvents: 'none'
+      position: 'fixed', top: 40, left: 0, right: 0,
+      zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+      pointerEvents: 'none'
     }}>
       {toasts.map(t => {
-        const c = colors[t.type] || colors.info;
+        const iconColor = colors[t.type] || colors.info;
         return (
           <div key={t.id} className={t.exiting ? 'toast-exit' : 'toast-enter'} style={{
-            background: c.bg, color: c.color, padding: '12px 18px',
-            borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10,
-            fontWeight: 500, fontSize: 13, border: `1px solid ${c.border}`,
-            backdropFilter: 'blur(16px)', pointerEvents: 'auto'
+            background: 'rgba(24, 24, 28, 0.85)', color: '#fff', padding: '12px 18px',
+            borderRadius: 100, display: 'flex', alignItems: 'center', gap: 10,
+            fontWeight: 500, fontSize: 13, border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(20px)', pointerEvents: 'auto',
+            maxWidth: '90%', width: 'max-content'
           }}>
             <span className="material-symbols-outlined" style={{
-              fontSize: 18, fontVariationSettings: "'FILL' 1"
+              fontSize: 18, color: iconColor, fontVariationSettings: "'FILL' 1"
             }}>{icons[t.type] || 'info'}</span>
-            {t.message}
+            <span style={{ paddingRight: 4 }}>{t.message}</span>
           </div>
         );
       })}

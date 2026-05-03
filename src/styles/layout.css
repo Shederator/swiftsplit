@@ -880,7 +880,9 @@
 .haggle-ready-status { display:flex;align-items:center;gap:16px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px; }
 .haggle-ready-player { flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary);transition:color var(--duration-normal); }
 .haggle-ready-player.is-ready { color:var(--green); }
-.haggle-ready-badge { font-size:11px;font-weight:600;padding:3px 10px;border-radius:var(--radius-full);background:var(--bg-elevated);border:1px solid var(--border); }
+.haggle-ready-badge { display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--radius-full);background:var(--bg-elevated);border:1px solid var(--border);transition:all 0.3s ease; }
+.haggle-ready-badge.ready { background:rgba(34, 197, 94, 0.1);border-color:var(--green);color:var(--green); }
+.haggle-ready-badge.waiting { background:rgba(255, 255, 255, 0.05);color:var(--text-secondary); }
 .haggle-ready-divider { width:1px;height:60px;background:var(--border);flex-shrink:0; }
 .haggle-waiting-other { display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px; }
 .haggle-waiting-other p { font-size:13px;color:var(--text-tertiary); }

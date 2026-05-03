@@ -19,6 +19,7 @@ export default function BalanceDetailScreen() {
   const navigate = useNavigate();
   const showToast = useToast();
   const [processingPay, setProcessingPay] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const { user, expenses, settlements, members } = store;
   const member = store.getMember(memberId);
@@ -94,28 +95,10 @@ export default function BalanceDetailScreen() {
     const handleVis = () => {
       if (document.visibilityState === 'visible') {
         document.removeEventListener('visibilitychange', handleVis);
-        showVerificationPopup();
+        setShowVerifyModal(true);
       }
     };
     setTimeout(() => document.addEventListener('visibilitychange', handleVis), 1000);
-  }
-  function showVerificationPopup() {
-    const overlay = document.createElement('div');
-    overlay.id = 'payment-verification-overlay';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px;';
-    const modal = document.createElement('div');
-    modal.style.cssText = 'background:var(--bg-card);border:1px solid var(--border-light);border-radius:24px;padding:24px;width:100%;max-width:320px;display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px rgba(0,0,0,0.3);';
-    modal.innerHTML = `<div style="text-align:center;"><div style="width:48px;height:48px;border-radius:24px;background:var(--accent-subtle);color:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"><span class="material-symbols-outlined" style="font-size:24px;">payment</span></div><h3 style="margin:0 0 8px;font-size:18px;">Payment Verification</h3><p style="margin:0;color:var(--text-secondary);font-size:14px;">Was the payment completed successfully on your UPI app?</p></div><div style="display:flex;gap:12px;margin-top:8px;"><button id="verify-no" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border-light);background:transparent;color:var(--text-primary);font-weight:600;cursor:pointer;">No</button><button id="verify-yes" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;">Yes</button></div>`;
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    modal.querySelector('#verify-no').onclick = () => { document.body.removeChild(overlay); showToast('Payment not recorded', 'info'); };
-    modal.querySelector('#verify-yes').onclick = async () => {
-      document.body.removeChild(overlay);
-      setProcessingPay(true);
-      await store.addSettlement(user.id, memberId, remainingToPay, '');
-      showToast(`Payment sent! Awaiting ${member.name.split(' ')[0]}'s confirmation`, 'success');
-      setProcessingPay(false);
-    };
   }
 
   return (
@@ -271,6 +254,44 @@ export default function BalanceDetailScreen() {
           )}
         </div>
       </div>
+      {/* Payment Verification Modal */}
+      {showVerifyModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 20 }}>
+          <div className="stagger" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 24, padding: 24, width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--accent-subtle)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 24 }}>payment</span>
+              </div>
+              <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>Payment Verification</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>Was the payment completed successfully on your UPI app?</p>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+              <button 
+                onClick={() => { setShowVerifyModal(false); showToast('Payment not recorded', 'info'); }}
+                style={{ flex: 1, padding: 12, borderRadius: 12, border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer', opacity: processingPay ? 0.5 : 1 }}
+                disabled={processingPay}
+              >No</button>
+              <button 
+                onClick={async () => {
+                  setProcessingPay(true);
+                  try {
+                    await store.addSettlement(user.id, memberId, remainingToPay, '');
+                    showToast(`Payment sent! Awaiting ${member.name.split(' ')[0]}'s confirmation`, 'success');
+                    setShowVerifyModal(false);
+                  } catch (e) {
+                    showToast('Failed to record payment', 'error');
+                  }
+                  setProcessingPay(false);
+                }}
+                style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', opacity: processingPay ? 0.8 : 1 }}
+                disabled={processingPay}
+              >
+                {processingPay ? <span className="material-symbols-outlined spin">progress_activity</span> : 'Yes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

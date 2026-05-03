@@ -1,0 +1,390 @@
+/* ═══════════════════════════════════════════════════════════════
+   HisabX — Tic Tac Toe Minigame Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Board Container ─── */
+.ttt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  animation: fadeUp var(--duration-slow) var(--ease-out) forwards;
+}
+
+.ttt-turn-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: all 0.4s var(--ease-spring);
+}
+
+.ttt-turn-banner.turn-x {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber);
+}
+
+.ttt-turn-banner.turn-o {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.ttt-turn-banner.turn-draw {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+
+.ttt-turn-banner.turn-x.active-pulse {
+  animation: tttTurnPulseX 2s ease-in-out infinite;
+}
+
+.ttt-turn-banner.turn-o.active-pulse {
+  animation: tttTurnPulseO 2s ease-in-out infinite;
+}
+
+.ttt-turn-banner .material-symbols-outlined {
+  font-size: 18px;
+  font-variation-settings: 'FILL' 1;
+}
+
+@keyframes tttTurnPulseX {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.3); }
+}
+
+@keyframes tttTurnPulseO {
+  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.3); }
+}
+
+/* ─── Board Grid ─── */
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  width: 280px;
+  height: 280px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+/* ─── Individual Cells ─── */
+.ttt-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s var(--ease-out);
+}
+
+.ttt-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ttt-cell:hover:not(.ttt-cell-filled):not(.ttt-cell-disabled)::before {
+  opacity: 1;
+}
+
+.ttt-cell:hover:not(.ttt-cell-filled):not(.ttt-cell-disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: scale(1.03);
+}
+
+.ttt-cell:active:not(.ttt-cell-filled):not(.ttt-cell-disabled) {
+  transform: scale(0.97);
+}
+
+.ttt-cell-filled {
+  cursor: default;
+}
+
+.ttt-cell-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ─── Cell Entrance (staggered) ─── */
+.ttt-cell-enter {
+  opacity: 0;
+  transform: scale(0.8);
+  animation: tttCellEnter 0.4s var(--ease-spring) forwards;
+}
+
+.ttt-cell-enter:nth-child(1) { animation-delay: 0ms; }
+.ttt-cell-enter:nth-child(2) { animation-delay: 40ms; }
+.ttt-cell-enter:nth-child(3) { animation-delay: 80ms; }
+.ttt-cell-enter:nth-child(4) { animation-delay: 120ms; }
+.ttt-cell-enter:nth-child(5) { animation-delay: 160ms; }
+.ttt-cell-enter:nth-child(6) { animation-delay: 200ms; }
+.ttt-cell-enter:nth-child(7) { animation-delay: 240ms; }
+.ttt-cell-enter:nth-child(8) { animation-delay: 280ms; }
+.ttt-cell-enter:nth-child(9) { animation-delay: 320ms; }
+
+@keyframes tttCellEnter {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ─── X Mark ─── */
+.ttt-mark-x {
+  width: 60%;
+  height: 60%;
+  position: relative;
+  animation: tttMarkPlace 0.4s var(--ease-spring) forwards;
+}
+
+.ttt-mark-x::before,
+.ttt-mark-x::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
+.ttt-mark-x::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: tttXStroke1 0.3s ease-out 0.1s both;
+}
+
+.ttt-mark-x::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+  animation: tttXStroke2 0.3s ease-out 0.2s both;
+}
+
+@keyframes tttXStroke1 {
+  from { transform: translate(-50%, -50%) rotate(45deg) scaleX(0); }
+  to { transform: translate(-50%, -50%) rotate(45deg) scaleX(1); }
+}
+
+@keyframes tttXStroke2 {
+  from { transform: translate(-50%, -50%) rotate(-45deg) scaleX(0); }
+  to { transform: translate(-50%, -50%) rotate(-45deg) scaleX(1); }
+}
+
+/* ─── O Mark ─── */
+.ttt-mark-o {
+  width: 55%;
+  height: 55%;
+  border: 4px solid transparent;
+  border-radius: 50%;
+  background: none;
+  position: relative;
+  animation: tttMarkPlace 0.4s var(--ease-spring) forwards;
+}
+
+.ttt-mark-o::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 4px solid #a855f7;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5), inset 0 0 12px rgba(168, 85, 247, 0.15);
+  animation: tttODraw 0.5s ease-out forwards;
+}
+
+@keyframes tttODraw {
+  from {
+    clip-path: polygon(50% 50%, 50% -50%, 50% -50%, 50% -50%, 50% -50%, 50% -50%, 50% -50%);
+    opacity: 0;
+  }
+  to {
+    clip-path: polygon(50% 50%, 50% -50%, 150% -50%, 150% 150%, -50% 150%, -50% -50%, 50% -50%);
+    opacity: 1;
+  }
+}
+
+@keyframes tttMarkPlace {
+  from { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  to { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ─── Win State ─── */
+.ttt-cell-win {
+  background: rgba(34, 197, 94, 0.12) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  animation: tttWinGlow 1s ease-in-out infinite alternate;
+}
+
+.ttt-cell-win .ttt-mark-x::before,
+.ttt-cell-win .ttt-mark-x::after {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.6);
+}
+
+.ttt-cell-win .ttt-mark-o::before {
+  border-color: #22c55e;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.6), inset 0 0 16px rgba(34, 197, 94, 0.2);
+}
+
+@keyframes tttWinGlow {
+  from {
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.2), inset 0 0 8px rgba(34, 197, 94, 0.05);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), inset 0 0 16px rgba(34, 197, 94, 0.1);
+  }
+}
+
+/* ─── Draw Shake ─── */
+.ttt-board-draw {
+  animation: tttDrawShake 0.6s ease-in-out;
+}
+
+@keyframes tttDrawShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-6px) rotate(-1deg); }
+  20% { transform: translateX(6px) rotate(1deg); }
+  30% { transform: translateX(-5px) rotate(-0.5deg); }
+  40% { transform: translateX(5px) rotate(0.5deg); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-1px); }
+}
+
+.ttt-cell-draw {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ─── Score / Status Bar ─── */
+.ttt-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.ttt-player-score {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s var(--ease-out);
+}
+
+.ttt-player-score.active-turn {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.06);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.1);
+}
+
+.ttt-player-score.active-turn-o {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.06);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.1);
+}
+
+.ttt-player-mark {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.ttt-player-mark-x {
+  color: #f59e0b;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.ttt-player-mark-o {
+  color: #a855f7;
+  text-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+.ttt-player-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ttt-vs-divider {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--text-disabled);
+  letter-spacing: 1px;
+}
+
+/* ─── Game Over Overlay ─── */
+.ttt-game-over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-2xl);
+  z-index: 10;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.ttt-game-over-text {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  animation: scalePop 0.5s var(--ease-spring) forwards;
+}
+
+.ttt-game-over-win {
+  color: #22c55e;
+  text-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+}
+
+.ttt-game-over-lose {
+  color: #ef4444;
+  text-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+}
+
+.ttt-game-over-draw {
+  color: var(--text-secondary);
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Hover Ghost ─── */
+.ttt-cell:not(.ttt-cell-filled):not(.ttt-cell-disabled):hover .ttt-ghost {
+  opacity: 0.2;
+}
+
+.ttt-ghost {
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}

@@ -116,8 +116,12 @@ CREATE TABLE IF NOT EXISTS wager_challenges (
   status TEXT NOT NULL DEFAULT 'pending',
   challenger_ready BOOLEAN NOT NULL DEFAULT false,
   opponent_ready BOOLEAN NOT NULL DEFAULT false,
+  challenger_choice TEXT,
+  opponent_choice TEXT,
   winner_id TEXT REFERENCES members(id),
   result_data JSONB,
+  ttt_board JSONB DEFAULT NULL,
+  ttt_current_turn TEXT DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   resolved_at TIMESTAMPTZ
 );
@@ -126,3 +130,9 @@ ALTER TABLE wager_challenges ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all on wager_challenges" ON wager_challenges FOR ALL USING (true) WITH CHECK (true);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE wager_challenges;
+
+-- ═══════════════════════════════════════════════════════════════
+--  Migration: Add Tic Tac Toe columns (run if table already exists)
+-- ═══════════════════════════════════════════════════════════════
+-- ALTER TABLE wager_challenges ADD COLUMN IF NOT EXISTS ttt_board JSONB DEFAULT NULL;
+-- ALTER TABLE wager_challenges ADD COLUMN IF NOT EXISTS ttt_current_turn TEXT DEFAULT NULL;

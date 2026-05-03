@@ -13,6 +13,7 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import './styles/animations.css';
+import './styles/tictactoe.css';
 
 ReactDOM.createRoot(document.getElementById('app')).render(
   <App />

@@ -83,8 +83,12 @@ class Store {
       status: w.status || 'pending',
       challengerReady: w.challenger_ready || false,
       opponentReady: w.opponent_ready || false,
+      challengerChoice: w.challenger_choice || null,
+      opponentChoice: w.opponent_choice || null,
       winnerId: w.winner_id || null,
       resultData: w.result_data || null,
+      tttBoard: w.ttt_board || null,
+      tttCurrentTurn: w.ttt_current_turn || null,
       createdAt: w.created_at,
       resolvedAt: w.resolved_at || null
     }));
@@ -279,6 +283,8 @@ class Store {
       status: 'pending',
       challenger_ready: false,
       opponent_ready: false,
+      challenger_choice: null,
+      opponent_choice: null,
       winner_id: null,
       result_data: null,
       created_at: now
@@ -289,6 +295,7 @@ class Store {
       id, challengerId, opponentId, amount: Number(amount),
       game, status: 'pending',
       challengerReady: false, opponentReady: false,
+      challengerChoice: null, opponentChoice: null,
       winnerId: null, resultData: null, createdAt: now, resolvedAt: null
     };
     this._data.wagers.unshift(wager);
@@ -321,18 +328,29 @@ class Store {
   }
 
   /** Mark a party as ready to flip (both must be ready before game runs) */
-  async setWagerReady(id, side) {
+  async setWagerReady(id, side, choice = null) {
     // side = 'challenger' | 'opponent'
-    const field = side === 'challenger' ? 'challenger_ready' : 'opponent_ready';
+    const readyField = side === 'challenger' ? 'challenger_ready' : 'opponent_ready';
+    const choiceField = side === 'challenger' ? 'challenger_choice' : 'opponent_choice';
+    
+    const updates = { [readyField]: true };
+    if (choice) updates[choiceField] = choice;
+
     const { error } = await supabase
       .from('wager_challenges')
-      .update({ [field]: true })
+      .update(updates)
       .eq('id', id);
     if (error) throw error;
+    
     const w = this._data.wagers.find(x => x.id === id);
     if (w) {
-      if (side === 'challenger') w.challengerReady = true;
-      else w.opponentReady = true;
+      if (side === 'challenger') {
+        w.challengerReady = true;
+        if (choice) w.challengerChoice = choice;
+      } else {
+        w.opponentReady = true;
+        if (choice) w.opponentChoice = choice;
+      }
     }
     this._notify();
     return w;
@@ -343,28 +361,36 @@ class Store {
     const now = new Date().toISOString();
     const w = this._data.wagers.find(x => x.id === id);
     if (!w) throw new Error('Wager not found');
+    if (w.status === 'resolved') return; // PROTECT AGAINST DOUBLE RESOLVE
+
+    // Optimistically mark as resolved locally to prevent race conditions
+    w.status = 'resolved';
 
     const { error } = await supabase
       .from('wager_challenges')
       .update({ status: 'resolved', winner_id: winnerId, result_data: resultData, resolved_at: now })
       .eq('id', id);
-    if (error) throw error;
+    if (error) {
+      w.status = 'accepted'; // Rollback on error
+      throw error;
+    }
 
-    // Create an expense: loser owes winner
-    const loserId = winnerId === w.challengerId ? w.opponentId : w.challengerId;
-    await this.addExpense(
-      null, 
-      w.amount, 
-      'Haggle Wager', 
-      'entertainment', 
-      winnerId, 
-      [loserId], 
-      'exact', 
-      { [loserId]: w.amount }
-    );
+    // Create an expense: loser owes winner (only if not a draw)
+    if (winnerId) {
+      const loserId = winnerId === w.challengerId ? w.opponentId : w.challengerId;
+      await this.addExpense(
+        null, 
+        w.amount, 
+        'Haggle Wager', 
+        'entertainment', 
+        winnerId, 
+        [loserId], 
+        'exact', 
+        { [loserId]: w.amount }
+      );
+    }
 
     if (w) {
-      w.status = 'resolved';
       w.winnerId = winnerId;
       w.resultData = resultData;
       w.resolvedAt = now;
@@ -372,15 +398,69 @@ class Store {
     this._notify();
   }
 
-  /** Get active wager between current user and a member (pending or accepted) */
+  /** Get active wager between current user and a member (pending, accepted, or playing) */
   getActiveWager(memberId) {
     const uid = this._data.user?.id;
     if (!uid) return null;
     return this._data.wagers.find(w =>
-      ['pending', 'accepted'].includes(w.status) &&
+      ['pending', 'accepted', 'playing'].includes(w.status) &&
       ((w.challengerId === uid && w.opponentId === memberId) ||
        (w.challengerId === memberId && w.opponentId === uid))
     ) || null;
+  }
+
+  /* ── Tic Tac Toe Methods ────────────────────────────────── */
+
+  /** Initialize TTT board when both players are ready */
+  async initTicTacToe(wagerId) {
+    const w = this._data.wagers.find(x => x.id === wagerId);
+    if (!w) throw new Error('Wager not found');
+
+    const emptyBoard = Array(9).fill(null);
+    const { error } = await supabase
+      .from('wager_challenges')
+      .update({
+        ttt_board: emptyBoard,
+        ttt_current_turn: w.challengerId,
+        status: 'playing'
+      })
+      .eq('id', wagerId);
+    if (error) throw error;
+
+    w.tttBoard = emptyBoard;
+    w.tttCurrentTurn = w.challengerId;
+    w.status = 'playing';
+    this._notify();
+  }
+
+  /** Place a move on the TTT board */
+  async makeWagerMove(wagerId, cellIndex, playerId) {
+    const w = this._data.wagers.find(x => x.id === wagerId);
+    if (!w) throw new Error('Wager not found');
+    if (!w.tttBoard) throw new Error('Board not initialized');
+    if (w.tttCurrentTurn !== playerId) throw new Error('Not your turn');
+    if (w.tttBoard[cellIndex] !== null) throw new Error('Cell occupied');
+
+    const mark = playerId === w.challengerId ? 'X' : 'O';
+    const newBoard = [...w.tttBoard];
+    newBoard[cellIndex] = mark;
+
+    // Switch turn
+    const nextTurn = playerId === w.challengerId ? w.opponentId : w.challengerId;
+
+    const { error } = await supabase
+      .from('wager_challenges')
+      .update({
+        ttt_board: newBoard,
+        ttt_current_turn: nextTurn
+      })
+      .eq('id', wagerId);
+    if (error) throw error;
+
+    // Optimistic local update
+    w.tttBoard = newBoard;
+    w.tttCurrentTurn = nextTurn;
+    this._notify();
   }
 
   async deleteExpense(id) {
