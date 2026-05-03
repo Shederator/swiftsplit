@@ -24,6 +24,7 @@ import createGroupScreen from './screens/create-group.js';
 import loginScreen from './screens/login.js';
 import balanceDetailScreen from './screens/balance-detail.js';
 import upiSetupScreen from './screens/upi-setup.js';
+import haggleScreen from './screens/haggle.js';
 
 // Register routes
 route('/', homeScreen);
@@ -35,6 +36,7 @@ route('/activity', activityScreen);
 route('/profile', profileScreen);
 route('/create-group', createGroupScreen);
 route('/balance-detail/:memberId/:direction', balanceDetailScreen);
+route('/haggle/:memberId/:direction', haggleScreen);
 
 // Handle hardware back button
 CapacitorApp.addListener('backButton', () => {
@@ -91,7 +93,7 @@ async function bootApp() {
     // The router will handle re-rendering when navigated
     // Only dispatch a global reload if we are not on an editing screen
     const hash = window.location.hash || '#/';
-    if (hash.includes('/add-expense') || hash.includes('/create-group') || hash.includes('/profile') || hash.includes('/balance-detail')) {
+    if (hash.includes('/add-expense') || hash.includes('/create-group') || hash.includes('/profile') || hash.includes('/balance-detail') || hash.includes('/haggle')) {
       return; // The screen manages its own local state during edits
     }
     window.dispatchEvent(new HashChangeEvent('hashchange'));

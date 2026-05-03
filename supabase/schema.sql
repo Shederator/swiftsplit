@@ -105,3 +105,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE group_members;
 ALTER PUBLICATION supabase_realtime ADD TABLE expenses;
 ALTER PUBLICATION supabase_realtime ADD TABLE expense_splits;
 ALTER PUBLICATION supabase_realtime ADD TABLE settlements;
+
+-- 8. Wager Challenges table
+CREATE TABLE IF NOT EXISTS wager_challenges (
+  id TEXT PRIMARY KEY,
+  challenger_id TEXT NOT NULL REFERENCES members(id),
+  opponent_id TEXT NOT NULL REFERENCES members(id),
+  amount NUMERIC(12,2) NOT NULL,
+  game TEXT NOT NULL DEFAULT 'coinflip',
+  status TEXT NOT NULL DEFAULT 'pending',
+  challenger_ready BOOLEAN NOT NULL DEFAULT false,
+  opponent_ready BOOLEAN NOT NULL DEFAULT false,
+  winner_id TEXT REFERENCES members(id),
+  result_data JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
+ALTER TABLE wager_challenges ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all on wager_challenges" ON wager_challenges FOR ALL USING (true) WITH CHECK (true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE wager_challenges;

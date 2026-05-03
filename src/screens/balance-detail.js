@@ -89,43 +89,51 @@ export default function balanceDetailScreen(container, params) {
   const totalPendingToMe = pendingToMe.reduce((s, p) => s + p.amount, 0);
   const remainingToPay = totalAmount - totalPendingFromMe;
 
-  // Find all expenses that contribute to this balance
+  // Find all expenses between these two users (both directions)
   const relevantExpenses = expenses.filter(exp => {
-    if (isYouOwe) {
-      return exp.paidBy === memberId && (exp.splitBetween || []).includes(user.id);
-    } else {
-      return exp.paidBy === user.id && (exp.splitBetween || []).includes(memberId);
-    }
+    const theyPaidMe = exp.paidBy === memberId && (exp.splitBetween || []).includes(user.id);
+    const iPaidThem = exp.paidBy === user.id && (exp.splitBetween || []).includes(memberId);
+    return theyPaidMe || iPaidThem;
   });
 
   // Calculate individual expense shares
   const breakdownItems = relevantExpenses.map(exp => {
-    let shareAmount = 0;
-    const targetMember = isYouOwe ? user.id : memberId;
+    let rawShare = 0;
+    const iPaidThem = exp.paidBy === user.id;
+    const targetMember = iPaidThem ? memberId : user.id;
 
     if (exp.splitMethod === 'exact' && exp.splitData) {
-      shareAmount = Number(exp.splitData[targetMember] || 0);
+      rawShare = Number(exp.splitData[targetMember] || 0);
     } else if (exp.splitMethod === 'weight' && exp.splitData) {
       const totalWeight = Object.values(exp.splitData).reduce((sum, w) => sum + Number(w || 0), 0);
       const weight = Number(exp.splitData[targetMember] || 0);
-      shareAmount = totalWeight > 0 ? (exp.amount * weight) / totalWeight : 0;
+      rawShare = totalWeight > 0 ? (exp.amount * weight) / totalWeight : 0;
     } else {
-      shareAmount = exp.amount / (exp.splitBetween || []).length;
+      rawShare = exp.amount / (exp.splitBetween || []).length;
     }
+
+    const increasesBalance = isYouOwe ? !iPaidThem : iPaidThem;
+    const shareAmount = increasesBalance ? rawShare : -rawShare;
 
     const group = store.getGroup(exp.groupId);
 
+    let desc = exp.description;
+    if (desc === 'Haggle Wager') {
+      // If I paid, I won. If they paid, they won (I lost).
+      desc = exp.paidBy === user.id ? 'Won Haggle Wager' : 'Lost Haggle Wager';
+    }
+
     return {
       id: exp.id,
-      description: exp.description,
+      description: desc,
       category: exp.category || 'other',
       totalAmount: exp.amount,
       shareAmount,
       date: exp.date,
-      groupName: group ? group.name : 'Unknown',
-      groupIcon: group ? group.icon : '📋'
+      groupName: group ? group.name : (exp.category === 'entertainment' ? 'Wager' : 'Direct Expense'),
+      groupIcon: group ? group.icon : (exp.category === 'entertainment' ? '' : '📋')
     };
-  }).filter(item => item.shareAmount > 0);
+  }).filter(item => item.shareAmount !== 0);
 
   // Trim expenses that are already covered by confirmed settlements.
   // We consume settlements from the oldest expense first, so only the
@@ -145,7 +153,9 @@ export default function balanceDetailScreen(container, params) {
   breakdownItems.sort((a, b) => new Date(a.date) - new Date(b.date));
   const currentItems = [];
   for (const item of breakdownItems) {
-    if (remaining >= item.shareAmount) {
+    if (item.shareAmount < 0) {
+      currentItems.push(item); // Negative items (deductions) are never trimmed
+    } else if (remaining >= item.shareAmount) {
       remaining -= item.shareAmount; // fully covered, skip
     } else if (remaining > 0) {
       // partially covered — show only the remainder
@@ -155,8 +165,23 @@ export default function balanceDetailScreen(container, params) {
       currentItems.push(item); // not covered at all
     }
   }
-  // Re-sort newest first for display
-  currentItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Re-sort newest first for display, but ensure wagers are always at the bottom
+  currentItems.sort((a, b) => {
+    const isWagerA = a.groupName === 'Wager' ? 1 : 0;
+    const isWagerB = b.groupName === 'Wager' ? 1 : 0;
+    if (isWagerA !== isWagerB) {
+      return isWagerA - isWagerB;
+    }
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  // Check for active actionable wagers
+  const activeWager = store.wagers.find(w => 
+    ['pending', 'accepted', 'ready'].includes(w.status) &&
+    ((w.opponentId === user.id && w.challengerId === memberId) || 
+     (w.challengerId === user.id && w.opponentId === memberId))
+  );
+  const showHaggleBadge = !!activeWager;
 
   // ── Build HTML ──
   container.innerHTML = `
@@ -295,7 +320,12 @@ export default function balanceDetailScreen(container, params) {
 
         ${currentItems.length > 0 ? `
         <div class="balance-detail-expense-list">
-          ${currentItems.map((item, idx) => `
+          ${currentItems.map((item, idx) => {
+            const isDeduction = item.shareAmount < 0;
+            const absShare = Math.abs(item.shareAmount);
+            const color = isDeduction ? 'var(--text-secondary)' : (isYouOwe ? 'var(--red)' : 'var(--green)');
+            const sign = isDeduction ? '-' : '';
+            return `
             <div class="balance-detail-expense-item" style="animation-delay:${(idx + 1) * 60}ms">
               <div class="balance-detail-expense-icon" style="background:var(--bg-card)">
                 <span class="material-symbols-outlined" style="font-size:18px;color:var(--text-secondary);font-variation-settings:'FILL' 1">${getCategoryIcon(item.category)}</span>
@@ -303,19 +333,19 @@ export default function balanceDetailScreen(container, params) {
               <div class="balance-detail-expense-info">
                 <p class="balance-detail-expense-desc">${item.description}</p>
                 <div class="balance-detail-expense-meta">
-                  <span>${item.groupIcon} ${item.groupName}</span>
+                  <span>${item.groupIcon ? item.groupIcon + ' ' : ''}${item.groupName}</span>
                   <span class="balance-detail-expense-dot"></span>
                   <span>${formatDate(item.date)}</span>
                 </div>
               </div>
               <div class="balance-detail-expense-amounts">
-                <p class="balance-detail-expense-share" style="color:${isYouOwe ? 'var(--red)' : 'var(--green)'}">
-                  ${formatCurrency(item.shareAmount)}
+                <p class="balance-detail-expense-share" style="color:${color}">
+                  ${sign}${formatCurrency(absShare)}
                 </p>
                 <p class="balance-detail-expense-total">of ${formatCurrency(item.totalAmount)}</p>
               </div>
-            </div>
-          `).join('')}
+            </div>`;
+          }).join('')}
         </div>
         ` : `
         <div class="balance-detail-empty">
@@ -332,8 +362,11 @@ export default function balanceDetailScreen(container, params) {
     <div class="balance-detail-actions">
       <div class="balance-detail-actions-inner">
         ${isYouOwe ? `
-          <button class="balance-detail-btn-haggle" id="haggle-btn">
-            <span class="material-symbols-outlined" style="font-size:20px">forum</span>
+          <button class="balance-detail-btn-haggle" id="haggle-btn" style="position:relative">
+            <div style="position:relative; display:inline-flex">
+              <span class="material-symbols-outlined" style="font-size:20px">forum</span>
+              ${showHaggleBadge ? '<span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:var(--red); border-radius:50%; box-shadow:0 0 0 2px var(--bg-card)"></span>' : ''}
+            </div>
             Haggle
           </button>
           <button class="balance-detail-btn-pay" id="pay-btn" ${remainingToPay <= 0 ? 'disabled' : ''}>
@@ -341,8 +374,11 @@ export default function balanceDetailScreen(container, params) {
             ${remainingToPay <= 0 ? 'Payment Pending…' : `Pay ₹${Math.round(remainingToPay).toLocaleString('en-IN')}`}
           </button>
         ` : `
-          <button class="balance-detail-btn-haggle" id="haggle-btn">
-            <span class="material-symbols-outlined" style="font-size:20px">forum</span>
+          <button class="balance-detail-btn-haggle" id="haggle-btn" style="position:relative">
+            <div style="position:relative; display:inline-flex">
+              <span class="material-symbols-outlined" style="font-size:20px">forum</span>
+              ${showHaggleBadge ? '<span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:var(--red); border-radius:50%; box-shadow:0 0 0 2px var(--bg-card)"></span>' : ''}
+            </div>
             Haggle
           </button>
           <button class="balance-detail-btn-nudge" id="nudge-btn">
@@ -435,6 +471,6 @@ export default function balanceDetailScreen(container, params) {
   });
 
   container.querySelector('#haggle-btn').addEventListener('click', () => {
-    showToast('Haggle feature coming soon!', 'info');
+    navigate(`/haggle/${memberId}/${direction}`);
   });
 }

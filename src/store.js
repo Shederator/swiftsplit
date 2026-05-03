@@ -7,7 +7,7 @@ import { generateId } from './utils.js';
 
 class Store {
   constructor() {
-    this._data = { user: null, members: [], groups: [], expenses: [], settlements: [] };
+    this._data = { user: null, members: [], groups: [], expenses: [], settlements: [], wagers: [] };
     this._listeners = [];
     this._channel = null;
     this._ready = false;
@@ -28,13 +28,14 @@ class Store {
   }
 
   async _fetchAll() {
-    const [membersR, groupsR, gmR, expensesR, esR, settlementsR] = await Promise.all([
+    const [membersR, groupsR, gmR, expensesR, esR, settlementsR, wagersR] = await Promise.all([
       supabase.from('members').select('*'),
       supabase.from('groups').select('*'),
       supabase.from('group_members').select('*'),
       supabase.from('expenses').select('*').order('date', { ascending: true }),
       supabase.from('expense_splits').select('*'),
       supabase.from('settlements').select('*'),
+      supabase.from('wager_challenges').select('*').order('created_at', { ascending: false }),
     ]);
 
     const members = membersR.data || [];
@@ -72,6 +73,21 @@ class Store {
       status: s.status || 'confirmed',
       confirmedAt: s.confirmed_at || null
     }));
+
+    this._data.wagers = (wagersR.data || []).map(w => ({
+      id: w.id,
+      challengerId: w.challenger_id,
+      opponentId: w.opponent_id,
+      amount: Number(w.amount),
+      game: w.game || 'coinflip',
+      status: w.status || 'pending',
+      challengerReady: w.challenger_ready || false,
+      opponentReady: w.opponent_ready || false,
+      winnerId: w.winner_id || null,
+      resultData: w.result_data || null,
+      createdAt: w.created_at,
+      resolvedAt: w.resolved_at || null
+    }));
   }
 
   /* ── Realtime ───────────────────────────────────────────────── */
@@ -88,6 +104,7 @@ class Store {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => this._debouncedRefresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expense_splits' }, () => this._debouncedRefresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'settlements' }, () => this._debouncedRefresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wager_challenges' }, () => this._debouncedRefresh())
       .subscribe();
   }
 
@@ -118,6 +135,7 @@ class Store {
   get groups() { return this._data.groups; }
   get expenses() { return this._data.expenses; }
   get settlements() { return this._data.settlements; }
+  get wagers() { return this._data.wagers; }
 
   getMember(id) { return this.members.find(m => m.id === id); }
   getGroup(id) { return this.groups.find(g => g.id === id); }
@@ -157,12 +175,14 @@ class Store {
     await supabase.from('expense_splits').insert(splitBetween.map(mid => ({ expense_id: id, member_id: mid })));
 
     // Update group last_active
-    await supabase.from('groups').update({ last_active: now }).eq('id', groupId);
+    if (groupId) {
+      await supabase.from('groups').update({ last_active: now }).eq('id', groupId);
+      const g = this.getGroup(groupId);
+      if (g) g.lastActive = now;
+    }
 
     const expense = { id, groupId, amount: Number(amount), description, category, paidBy, splitBetween, splitMethod, splitData, date: now };
     this._data.expenses.push(expense);
-    const g = this.getGroup(groupId);
-    if (g) g.lastActive = now;
     this._notify();
     return expense;
   }
@@ -240,6 +260,127 @@ class Store {
     return this._data.settlements.filter(
       s => s.status === 'pending' && s.from === memberId && s.to === this._data.user.id
     );
+  }
+
+  /* ── Wager / Haggle Methods ────────────────────────────── */
+
+  /** Create a new wager challenge (challenger proposes, status=pending) */
+  async createWager(opponentId, amount, game = 'coinflip') {
+    const id = generateId();
+    const now = new Date().toISOString();
+    const challengerId = this._data.user.id;
+
+    const { error } = await supabase.from('wager_challenges').insert({
+      id,
+      challenger_id: challengerId,
+      opponent_id: opponentId,
+      amount: Number(amount),
+      game,
+      status: 'pending',
+      challenger_ready: false,
+      opponent_ready: false,
+      winner_id: null,
+      result_data: null,
+      created_at: now
+    });
+    if (error) throw error;
+
+    const wager = {
+      id, challengerId, opponentId, amount: Number(amount),
+      game, status: 'pending',
+      challengerReady: false, opponentReady: false,
+      winnerId: null, resultData: null, createdAt: now, resolvedAt: null
+    };
+    this._data.wagers.unshift(wager);
+    this._notify();
+    return wager;
+  }
+
+  /** Opponent accepts the wager (status pending → accepted) */
+  async acceptWager(id) {
+    const { error } = await supabase
+      .from('wager_challenges')
+      .update({ status: 'accepted' })
+      .eq('id', id);
+    if (error) throw error;
+    const w = this._data.wagers.find(x => x.id === id);
+    if (w) w.status = 'accepted';
+    this._notify();
+  }
+
+  /** Either party cancels before the game starts */
+  async cancelWager(id) {
+    const { error } = await supabase
+      .from('wager_challenges')
+      .update({ status: 'cancelled' })
+      .eq('id', id);
+    if (error) throw error;
+    const w = this._data.wagers.find(x => x.id === id);
+    if (w) w.status = 'cancelled';
+    this._notify();
+  }
+
+  /** Mark a party as ready to flip (both must be ready before game runs) */
+  async setWagerReady(id, side) {
+    // side = 'challenger' | 'opponent'
+    const field = side === 'challenger' ? 'challenger_ready' : 'opponent_ready';
+    const { error } = await supabase
+      .from('wager_challenges')
+      .update({ [field]: true })
+      .eq('id', id);
+    if (error) throw error;
+    const w = this._data.wagers.find(x => x.id === id);
+    if (w) {
+      if (side === 'challenger') w.challengerReady = true;
+      else w.opponentReady = true;
+    }
+    this._notify();
+    return w;
+  }
+
+  /** Resolve the wager: record winner, settle the balance */
+  async resolveWager(id, winnerId, resultData) {
+    const now = new Date().toISOString();
+    const w = this._data.wagers.find(x => x.id === id);
+    if (!w) throw new Error('Wager not found');
+
+    const { error } = await supabase
+      .from('wager_challenges')
+      .update({ status: 'resolved', winner_id: winnerId, result_data: resultData, resolved_at: now })
+      .eq('id', id);
+    if (error) throw error;
+
+    // Create an expense: loser owes winner
+    const loserId = winnerId === w.challengerId ? w.opponentId : w.challengerId;
+    await this.addExpense(
+      null, 
+      w.amount, 
+      'Haggle Wager', 
+      'entertainment', 
+      winnerId, 
+      [loserId], 
+      'exact', 
+      { [loserId]: w.amount }
+    );
+
+    if (w) {
+      w.status = 'resolved';
+      w.winnerId = winnerId;
+      w.resultData = resultData;
+      w.resolvedAt = now;
+    }
+    this._notify();
+  }
+
+  /** Get active wager between current user and a member (pending or accepted) */
+  getActiveWager(memberId) {
+    const uid = this._data.user?.id;
+    if (!uid) return null;
+    return this._data.wagers.find(w =>
+      ['pending', 'accepted'].includes(w.status) &&
+      ((w.challengerId === uid && w.opponentId === memberId) ||
+       (w.challengerId === memberId && w.opponentId === uid))
+    ) || null;
   }
 
   async deleteExpense(id) {

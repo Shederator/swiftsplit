@@ -7,7 +7,8 @@ import { formatCurrency, formatDate, renderAvatar, getCategoryIcon } from '../ut
 export default function activityScreen(container) {
   const allItems = [
     ...store.expenses.map(e => ({ ...e, type: 'expense' })),
-    ...store.settlements.map(s => ({ ...s, type: 'settlement' }))
+    ...store.settlements.map(s => ({ ...s, type: 'settlement' })),
+    ...store.wagers.map(w => ({ ...w, type: 'wager', date: w.createdAt }))
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   container.innerHTML = `
@@ -52,6 +53,74 @@ export default function activityScreen(container) {
               <span style="font-size:16px;font-weight:600;color:${statusColor};flex-shrink:0">${formatCurrency(item.amount)}</span>
             </div>`;
           }
+          if (item.type === 'wager') {
+            const challenger = store.getMember(item.challengerId);
+            const opponent = store.getMember(item.opponentId);
+            const amIChallenger = item.challengerId === store.user.id;
+            const amIOpponent = item.opponentId === store.user.id;
+            
+            let msg = '';
+            let subMsg = '';
+            let statusColor = 'var(--amber)';
+            let statusBg = 'var(--amber-subtle)';
+            let statusBorder = 'rgba(255,217,61,0.15)';
+            let statusIcon = 'casino';
+
+            if (item.status === 'pending') {
+              if (amIChallenger) msg = `You challenged ${opponent?.name.split(' ')[0]}`;
+              else if (amIOpponent) msg = `${challenger?.name.split(' ')[0]} challenged you`;
+              else msg = `${challenger?.name.split(' ')[0]} challenged ${opponent?.name.split(' ')[0]}`;
+              subMsg = 'Pending acceptance';
+            } else if (item.status === 'accepted' || item.status === 'ready') {
+              msg = `Wager active between ${amIChallenger ? 'you' : challenger?.name.split(' ')[0]} and ${amIOpponent ? 'you' : opponent?.name.split(' ')[0]}`;
+              subMsg = 'Waiting to flip';
+            } else if (item.status === 'cancelled') {
+              msg = `Wager cancelled`;
+              subMsg = 'Challenge declined';
+              statusColor = 'var(--text-secondary)';
+              statusBg = 'var(--bg-input)';
+              statusBorder = 'var(--border)';
+              statusIcon = 'do_not_disturb_on';
+            } else if (item.status === 'resolved') {
+              const iWon = item.winnerId === store.user.id;
+              if (item.winnerId) {
+                if (amIChallenger || amIOpponent) {
+                  if (iWon) {
+                    msg = `You won the wager!`;
+                    statusColor = 'var(--green)';
+                    statusBg = 'var(--green-subtle)';
+                    statusBorder = 'rgba(0,214,143,0.15)';
+                    statusIcon = 'emoji_events';
+                  } else {
+                    msg = `You lost the wager`;
+                    statusColor = 'var(--red)';
+                    statusBg = 'var(--red-subtle)';
+                    statusBorder = 'rgba(255,107,107,0.15)';
+                    statusIcon = 'sentiment_dissatisfied';
+                  }
+                } else {
+                  const winner = store.getMember(item.winnerId);
+                  msg = `${winner?.name.split(' ')[0]} won the wager`;
+                  statusColor = 'var(--accent)';
+                  statusBg = 'var(--accent-subtle)';
+                  statusBorder = 'var(--border-accent)';
+                }
+              }
+              subMsg = `Coin flip: ${item.resultData?.flip || 'heads'}`;
+            }
+
+            return `<div class="card activity-item" style="display:flex;align-items:center;gap:14px">
+              <div style="width:42px;height:42px;border-radius:50%;background:${statusBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${statusBorder}">
+                <span class="material-symbols-outlined" style="color:${statusColor};font-size:20px">${statusIcon}</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <p style="font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${msg}</p>
+                <p style="font-size:12px;color:var(--text-tertiary)">${subMsg} · ${formatDate(item.date)}</p>
+              </div>
+              <span style="font-size:16px;font-weight:600;color:${statusColor};flex-shrink:0">${formatCurrency(item.amount)}</span>
+            </div>`;
+          }
+
           const payer = store.getMember(item.paidBy);
           const group = store.getGroup(item.groupId);
           const isMe = item.paidBy === store.user.id;
@@ -61,7 +130,7 @@ export default function activityScreen(container) {
             </div>
             <div style="flex:1;min-width:0">
               <p style="font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.description}</p>
-              <p style="font-size:12px;color:var(--text-tertiary)">${isMe ? 'You' : payer?.name} paid · ${group?.name || ''} · ${formatDate(item.date)}</p>
+              <p style="font-size:12px;color:var(--text-tertiary)">${isMe ? 'You' : payer?.name} paid${group ? ` · ${group.name}` : ''} · ${formatDate(item.date)}</p>
             </div>
             <span style="font-size:16px;font-weight:600;color:var(--text-primary);flex-shrink:0">${formatCurrency(item.amount)}</span>
           </div>`;
