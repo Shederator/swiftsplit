@@ -139,6 +139,8 @@ export function calculateBalances(expenses, settlements, members) {
           amountOwed = exp.amount / splits.length;
         }
 
+        if (!balances[memberId]) balances[memberId] = {};
+        if (!balances[payer]) balances[payer] = {};
         balances[memberId][payer] = (balances[memberId][payer] || 0) + amountOwed;
         balances[payer][memberId] = (balances[payer][memberId] || 0) - amountOwed;
       }
@@ -151,6 +153,8 @@ export function calculateBalances(expenses, settlements, members) {
   // doesn't prematurely reduce what's owed across Group A + B combined.
   settlements.forEach(s => {
     if (s.status && s.status !== 'confirmed') return; // skip pending/rejected
+    if (!balances[s.from]) balances[s.from] = {};
+    if (!balances[s.to]) balances[s.to] = {};
     balances[s.from][s.to] = (balances[s.from][s.to] || 0) - s.amount;
     balances[s.to][s.from] = (balances[s.to][s.from] || 0) + s.amount;
   });
